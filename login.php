@@ -81,37 +81,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 </style>
 
 
-<!-- <style>
-    body {
-    background: linear-gradient(to right, #ff7e5f, #feb47b);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Arial', sans-serif;
-}
-
-.container {
-    margin-top: 50px;
-}
-
-.card {
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-    transition: 0.3s;
-}
-
-.card:hover {
-    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
-}
-
-.card-header {
-    background: linear-gradient(to right, #ff7e5f, #feb47b);
-    color: white;
-}
-
-.btn-primary {
-    background: linear-gradient(to right, #4facfe, #00f2fe);
-    border: none;
-}
-
-</style>  -->

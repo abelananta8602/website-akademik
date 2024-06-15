@@ -7,7 +7,7 @@ function get_matakuliah($conn) {
     return $result;
 }
 
-// Fungsi untuk menambah atau mengedit mata kuliah
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = $_POST['id'];
     $namamatakuliah = $_POST['namamatakuliah'];
@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     header("Location: mata_kuliah.php");
 }
 
-// Fungsi untuk menghapus mata kuliah
+
 if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
     $sql = "DELETE FROM matakuliah WHERE id='$id'";
@@ -68,7 +68,7 @@ if (isset($_GET['edit'])) {
     </nav>
     <div class="container">
         <div class="text-center">
-            <button style="font-weight:700; background-color: paleturquoise;" class="text-dark" onclick="document.getElementById('formModal').style.display='block'">Tambah Mata Kuliah</button>
+            <button style="font-weight:700; background-color: #60EFFF;" class="text-dark" onclick="document.getElementById('formModal').style.display='block'">Tambah Mata Kuliah</button>
         </div>
         <table>
             <thead>
@@ -145,7 +145,7 @@ if (isset($_GET['edit'])) {
 
 <style>
     nav {
-    background-color: paleturquoise;
+    background-color: #60EFFF;
     color: white;
     padding: 10px 0;
 }

@@ -1,14 +1,13 @@
 <?php
 include 'koneksi.php';
 
-// Fungsi untuk menampilkan data mahasiswa
 function get_mahasiswa($conn) {
     $sql = "SELECT * FROM mahasiswa";
     $result = $conn->query($sql);
     return $result;
 }
 
-// Fungsi untuk menambah atau mengedit mahasiswa
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nim = $_POST['nim'];
     $nama = $_POST['nama'];
@@ -25,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     header("Location: main.php");
 }
 
-// Fungsi untuk menghapus mahasiswa
+
 if (isset($_GET['delete'])) {
     $nim = $_GET['delete'];
     $sql = "DELETE FROM mahasiswa WHERE nim='$nim'";
@@ -33,7 +32,7 @@ if (isset($_GET['delete'])) {
     header("Location: main.php");
 }
 
-// Inisialisasi variabel untuk formulir
+
 $action = 'add';
 $nim = $nama = $alamat = $email = $telepon = '';
 
@@ -69,7 +68,7 @@ if (isset($_GET['edit'])) {
     </nav>
     <div class="container">
         <div class="text-center">
-            <button style="font-weight:700; background-color: paleturquoise;" class="text-dark" onclick="document.getElementById('formModal').style.display='block'">Tambah Mahasiswa</button>
+            <button style="font-weight:700; background-color: #60EFFF;" class="text-dark" onclick="document.getElementById('formModal').style.display='block'">Tambah Mahasiswa</button>
         </div>
         <table>
             <thead>
@@ -149,7 +148,7 @@ if (isset($_GET['edit'])) {
 
 <style>
     nav {
-    background-color: paleturquoise;
+    background-color: #60EFFF;
     color: white;
     padding: 10px 0;
 }

@@ -27,13 +27,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     header("Location: jadwal_kuliah.php");
 }
 
-
-if (isset($_GET['delete'])) {
+ if (isset($_GET['delete'])) {
     $id = $_GET['delete'];
     $sql = "DELETE FROM jadwal_kuliah WHERE id='$id'";
-    $conn->query($sql);
-    header("Location: jadwal_kuliah.php");
+$conn->query($sql);
+header("Location: jadwal_kuliah.php");
 }
+
 
 $action = 'add';
 $id = $hari = $tanggal = $waktu = $mata_kuliah = $dosen = $ruangan = $kode_mk = $tipe_kelas = '';
@@ -75,7 +75,7 @@ if (isset($_GET['edit'])) {
     </nav>
     <div class="container">
         <div class="text-center">
-            <button style="font-weight:700; background-color: paleturquoise;" class="text-dark" onclick="document.getElementById('formModal').style.display='block'">Tambah Jadwal Kuliah</button>
+            <button style="font-weight:700; background-color: #60EFFF;" class="text-dark" onclick="document.getElementById('formModal').style.display='block'">Tambah Jadwal Kuliah</button>
         </div>
         <center>
         <table >
@@ -94,6 +94,7 @@ if (isset($_GET['edit'])) {
             </thead>
             <tbody>
             <?php
+            
                 $result = get_jadwal_kuliah($conn);
                 if ($result->num_rows > 0) {
                     while ($row = $result->fetch_assoc()) {
@@ -173,7 +174,7 @@ if (isset($_GET['edit'])) {
 
 <style>
     nav {
-    background-color: paleturquoise;
+    background-color: #60EFFF;
     color: white;
     padding: 10px 0;
 }
@@ -281,3 +282,5 @@ button:hover {
 }
 
 </style>
+
+
