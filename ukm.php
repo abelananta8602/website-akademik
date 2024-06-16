@@ -156,7 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     nav {
     background-color: #60EFFF;
     color: white;
-    padding: 10px 0;
+    padding: 20px 0;
 }
 
 nav ul {

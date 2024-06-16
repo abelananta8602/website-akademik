@@ -1,33 +1,20 @@
 <?php
 include 'koneksi.php';
 
-
-function get_kegiatan($conn) {
+function get_kegiatan($conn)
+{
     $sql = "SELECT * FROM kegiatan";
     $result = $conn->query($sql);
     return $result;
 }
 
-
-if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $sql = "DELETE FROM kegiatan WHERE id='$id'";
-    $conn->query($sql);
-    header("Location: kegiatan.php");
-}
-
-$id = $nama_kegiatan = $deskripsi = $waktu = $tempat = '';
-$action = 'add';
-
-if (isset($_GET['edit'])) {
-    $id = $_GET['edit'];
-    $result = $conn->query("SELECT * FROM kegiatan WHERE id='$id'");
-    $row = $result->fetch_assoc();
-    $nama_kegiatan = $row['nama_kegiatan'];
-    $deskripsi = $row['deskripsi'];
-    $waktu = $row['waktu'];
-    $tempat = $row['tempat'];
-    $action = 'edit';
+function get_kegiatan_by_id($conn, $id)
+{
+    $stmt = $conn->prepare("SELECT * FROM kegiatan WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result->fetch_assoc();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -36,124 +23,135 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $deskripsi = $_POST['deskripsi'];
     $waktu = $_POST['waktu'];
     $tempat = $_POST['tempat'];
+    $action = $_POST['action'];
 
-    if ($_POST['action'] == 'add') {
-        $sql = "INSERT INTO kegiatan (nama_kegiatan, deskripsi, waktu, tempat) VALUES ('$nama_kegiatan', '$deskripsi', '$waktu', '$tempat')";
-    } elseif ($_POST['action'] == 'edit') {
-        $sql = "UPDATE kegiatan SET nama_kegiatan='$nama_kegiatan', deskripsi='$deskripsi', waktu='$waktu', tempat='$tempat' WHERE id='$id'";
+    if ($action == 'add') {
+        $stmt = $conn->prepare("INSERT INTO kegiatan (nama_kegiatan, deskripsi, waktu, tempat) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $nama_kegiatan, $deskripsi, $waktu, $tempat);
+    } elseif ($action == 'edit') {
+        $stmt = $conn->prepare("UPDATE kegiatan SET nama_kegiatan=?, deskripsi=?, waktu=?, tempat=? WHERE id=?");
+        $stmt->bind_param("ssssi", $nama_kegiatan, $deskripsi, $waktu, $tempat, $id);
     }
-    $conn->query($sql);
+    $stmt->execute();
+    $stmt->close();
     header("Location: kegiatan.php");
+}
+
+if (isset($_GET['delete'])) {
+    $id = $_GET['delete'];
+    $stmt = $conn->prepare("DELETE FROM kegiatan WHERE id=?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: kegiatan.php");
+}
+
+$editData = null;
+if (isset($_GET['edit'])) {
+    $editData = get_kegiatan_by_id($conn, $_GET['edit']);
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Akademik</title>
+    <title>Website Akademik - Kegiatan</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
+
 <body>
 <nav>
-        <ul>
-            <li><a style="font-weight:semi-bold;"  href="main.php">Mahasiswa</asty></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="mata_kuliah.php">Mata Kuliah</a></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="jadwal_kuliah.php">Jadwal Kuliah</a></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="ukm.php">UKM</a></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="kegiatan.php">Kegiatan</a></li>
-        </ul>
-    </nav>
-    <div class="container">
-       
-        <button style="margin-top:70px; font-weight:bold; background-color:#60EFFF" id="openModal" class="text-dark; btn ">Tambah Kegiatan</button>
-
-  
-        <div id="ukmModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2 id="modalTitle">Tambah UKM</h2>
-                <form id="ukmForm" method="post">
-                    <input type="hidden" name="action" id="action" value="add">
-                    <input type="hidden" name="id" id="id">
-                    <label for="nama">Nama UKM:</label>
-                    <input type="text" id="nama" name="nama" required>
-                    <label for="deskripsi">Deskripsi:</label>
-                    <textarea id="deskripsi" name="deskripsi" required></textarea>
-                    <button type="submit">Simpan</button>
-                </form>
-            </div>
-        </div>
-
-      
-        <div class="card-container">
-            <?php
-            $result = get_kegiatan($conn);
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo '
-                    <div class="card">
-                        <div class="card-content">
-                            <h2>' . $row['nama_kegiatan'] . '</h2>
-                            <p>' . $row['deskripsi'] . '</p>
-                            <div class="card-actions">
-                                <button class="edit-btn" data-id="' . $row['id'] . '" data-nama="' . $row['nama_kegiatan'] . '" data-deskripsi="' . $row['deskripsi'] . '">Edit</button>
-                                <a href="kegiatan.php?delete=' . $row['id'] . '" onclick="return confirm(\'Are you sure?\')">Delete</a>
-                            </div>
-                        </div>
-                    </div>';
-                }
-            } else {
-                echo '<p>Tidak ada Kegiatan</p>';
-            }
-            ?>
-        </div>
+    <ul>
+        <li><a style="font-weight:semi-bold;" class="text-dark" href="main.php">Mahasiswa</a></li>
+        <li><a style="font-weight:semi-bold;" class="text-dark" href="mata_kuliah.php">Mata Kuliah</a></li>
+        <li><a style="font-weight:semi-bold;" class="text-dark" href="jadwal_kuliah.php">Jadwal Kuliah</a></li>
+        <li><a style="font-weight:semi-bold;" class="text-dark" href="ukm.php">UKM</a></li>
+        <li><a style="font-weight:semi-bold;" class="text-dark" href="kegiatan.php">Kegiatan</a></li>
+    </ul>
+</nav>
+<div style="margin-top: 50px;" class="container">
+    <div class="text-center">
+        <button style="margin:30px; font-weight:bold; background-color:#60EFFF" id="openModal" class="text-dark btn">Tambah Kegiatan</button>
     </div>
-
-    <script>
-      
-        var modal = document.getElementById("ukmModal");
-
-      var btn = document.getElementById("openModal");
-
-      
-        var span = document.getElementsByClassName("close")[0];
-
-        
-        btn.onclick = function() {
-            document.getElementById('ukmForm').reset();
-            document.getElementById('modalTitle').innerText = 'Tambah UKM';
-            document.getElementById('action').value = 'add';
-            modal.style.display = "block";
+    <div class="card-container">
+        <?php
+        $result = get_kegiatan($conn);
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                echo '<div class="card">';
+                echo '<h3>' . $row['nama_kegiatan'] . '</h3>';
+                echo '<p>' . $row['deskripsi'] . '</p>';
+                echo '<p><strong>Waktu:</strong> ' . $row['waktu'] . '</p>';
+                echo '<p><strong>Tempat:</strong> ' . $row['tempat'] . '</p>';
+                echo '<div class="card-actions">
+                        <a href="kegiatan.php?edit=' . $row['id'] . '">Edit</a> |
+                        <a href="kegiatan.php?delete=' . $row['id'] . '">Hapus</a>
+                      </div>';
+                echo '</div>';
+            }
+        } else {
+            echo '<p class="text-center">Tidak ada data kegiatan</p>';
         }
+        ?>
+    </div>
+</div>
 
-        
-        span.onclick = function() {
+<div id="formModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 style="margin-top: 15px;"><?php echo isset($editData) ? 'Edit' : 'Tambah'; ?> Kegiatan</h2>
+        <form id="kegiatanForm" method="post" action="kegiatan.php">
+            <input type="hidden" name="action" value="<?php echo isset($editData) ? 'edit' : 'add'; ?>">
+            <input type="hidden" name="id" value="<?php echo isset($editData) ? $editData['id'] : ''; ?>">
+            <label for="nama_kegiatan">Nama Kegiatan:</label>
+            <input type="text" id="nama_kegiatan" name="nama_kegiatan" value="<?php echo isset($editData) ? $editData['nama_kegiatan'] : ''; ?>" required>
+
+            <label for="deskripsi">Deskripsi:</label>
+            <textarea id="deskripsi" name="deskripsi" required><?php echo isset($editData) ? $editData['deskripsi'] : ''; ?></textarea>
+
+            <label for="waktu">Waktu:</label>
+            <input type="datetime-local" id="waktu" name="waktu" value="<?php echo isset($editData) ? date('Y-m-d\TH:i', strtotime($editData['waktu'])) : ''; ?>" required>
+
+            <label for="tempat">Tempat:</label>
+            <input type="text" id="tempat" name="tempat" value="<?php echo isset($editData) ? $editData['tempat'] : ''; ?>" required>
+            <button type="submit"><?php echo isset($editData) ? 'Ubah' : 'Simpan'; ?></button>
+        </form>
+    </div>
+</div>
+
+<script>
+    var modal = document.getElementById("formModal");
+    var btn = document.getElementById("openModal");
+    var span = document.getElementsByClassName("close")[0];
+
+    btn.onclick = function() {
+        document.getElementById('kegiatanForm').reset();
+        modal.style.display = "block";
+        document.querySelector("input[name='action']").value = 'add';
+    }
+
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
             modal.style.display = "none";
         }
+    }
 
-        
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-    
-        document.querySelectorAll('.edit-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                document.getElementById('modalTitle').innerText = 'Edit UKM';
-                document.getElementById('action').value = 'edit';
-                document.getElementById('id').value = button.getAttribute('data-id');
-                document.getElementById('nama').value = button.getAttribute('data-nama');
-                document.getElementById('deskripsi').value = button.getAttribute('data-deskripsi');
-                modal.style.display = "block";
-            });
-        });
-    </script>
+    <?php if (isset($_GET['edit'])) : ?>
+        document.getElementById("formModal").style.display = "block";
+        document.querySelector("input[name='action']").value = 'edit';
+    <?php endif; ?>
+</script>
 </body>
+
 </html>
 
 <style>
@@ -176,7 +174,7 @@ nav ul li {
 }
 
 nav ul li a {
-    color: black;
+    font-weight: 500;
     text-decoration: none;
     font-size: 18px;
 }
@@ -184,114 +182,93 @@ nav ul li a {
 nav ul li a:hover {
     text-decoration: underline;
 }
-    body {
+
+body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
-}
-    body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 0;
 }
 
 .container {
-    width: 80%;
+    max-width: 900px;
     margin: 0 auto;
     padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .text-center {
     text-align: center;
-}
-
-.btn {
-    background-color: #60EFFF;
-    
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-block;
     margin-bottom: 20px;
-}
-
-.btn:hover {
-    background-color: #0056b3;
 }
 
 .card-container {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 20px;
+    justify-content: center;
 }
 
 .card {
-    width: 300px;
+    background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 8px;
-    overflow: hidden;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    background-color: #fff;
-}
-
-.card-content {
     padding: 20px;
+    width: 250px;
+    text-align: left;
 }
 
-.card-content h2 {
+.card h3 {
     margin-top: 0;
+    font-size: 20px;
+    color: #333;
 }
 
-.card-content p {
+.card p {
     color: #555;
+    font-size: 14px;
+    margin-bottom: 10px;
 }
 
 .card-actions {
-    padding-top: 10px;
-    border-top: 1px solid #ddd;
-    text-align: right;
+    text-align: center;
+    margin-top: 10px;
 }
 
-.card-actions button,
 .card-actions a {
-    color: #007bff;
     text-decoration: none;
-    margin-left: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font: inherit;
+    color: #60EFFF;
+    font-weight: bold;
+    margin: 0 5px;
 }
 
-.card-actions button:hover,
 .card-actions a:hover {
     text-decoration: underline;
 }
 
 .modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1; 
+    display: none;
+    position: fixed;
+    z-index: 1;
     left: 0;
     top: 0;
     width: 100%;
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgb(0,0,0); 
-    background-color: rgba(0,0,0,0.4); 
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+    padding-top: 60px;
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: 15% auto; 
+    margin: 5% auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 80%; 
+    width: 80%;
     max-width: 500px;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .close {
