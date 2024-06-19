@@ -110,7 +110,7 @@ if (isset($_GET['edit'])) {
                             echo '<td>' . $row['tipe_kelas'] . '</td>';
                             echo '<td>
                             <a href="jadwal_kuliah.php?edit=' . $row['id'] . '">Edit</a> |
-                            <a href="jadwal_kuliah.php?delete=' . $row['id'] . '">Hapus</a>
+                            <a href="jadwal_kuliah.php?delete=' . $row['id'] . '" onclick="return confirm(\'Are you sure?\')">Hapus</a>
                         </td>';
                             echo '</tr>';
                         }

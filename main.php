@@ -101,7 +101,7 @@ if (isset($_GET['edit'])) {
                     echo '<td>' . $row['telepon'] . '</td>';
                     echo '<td>
                             <a href="main.php?edit=' . $row['id'] . '">Edit</a> |
-                            <a href="main.php?delete=' . $row['id'] . '">Hapus</a>
+                            <a href="main.php?delete=' . $row['id'] . '" onclick="return confirm(\'Are you sure?\')">Hapus</a>
                         </td>';
                     echo '</tr>';
                 }
