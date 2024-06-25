@@ -1,34 +1,31 @@
 <?php
 include 'koneksi.php';
 
-function get_ukm_by_id($conn, $id)
+function get_kegiatan_by_id($conn, $id)
 {
-    $stmt = $conn->prepare("SELECT * FROM ukm WHERE id = ?");
+    $stmt = $conn->prepare("SELECT * FROM kegiatan WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
     return $result->fetch_assoc();
 }
 
-$editData = null;
-if (isset($_GET['edit'])) {
-    $editData = get_ukm_by_id($conn, $_GET['edit']);
-}
-
 $success = false;
 $error = false;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = $_POST['id'];
-    $nama = $_POST['nama'];
+    $nama_kegiatan = $_POST['nama_kegiatan'];
     $deskripsi = $_POST['deskripsi'];
+    $waktu = $_POST['waktu'];
+    $tempat = $_POST['tempat'];
     $action = $_POST['action'];
 
     if ($action == 'add') {
-        $stmt = $conn->prepare("INSERT INTO ukm (nama, deskripsi) VALUES (?, ?)");
-        $stmt->bind_param("ss", $nama, $deskripsi);
+        $stmt = $conn->prepare("INSERT INTO kegiatan (nama_kegiatan, deskripsi, waktu, tempat) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $nama_kegiatan, $deskripsi, $waktu, $tempat);
     } elseif ($action == 'edit') {
-        $stmt = $conn->prepare("UPDATE ukm SET nama=?, deskripsi=? WHERE id=?");
-        $stmt->bind_param("ssi", $nama, $deskripsi, $id);
+        $stmt = $conn->prepare("UPDATE kegiatan SET nama_kegiatan=?, deskripsi=?, waktu=?, tempat=? WHERE id=?");
+        $stmt->bind_param("ssssi", $nama_kegiatan, $deskripsi, $waktu, $tempat, $id);
     }
     if ($stmt->execute()) {
         $success = true;
@@ -36,6 +33,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $error = true;
     }
     $stmt->close();
+    echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if ($success) {
+                    document.getElementById('popup').style.display = 'block';
+                } else if ($error) {
+                    document.getElementById('popup-fail').style.display = 'block';
+                }
+            });
+          </script>";
+}
+
+$editData = null;
+if (isset($_GET['edit'])) {
+    $editData = get_kegiatan_by_id($conn, $_GET['edit']);
 }
 ?>
 
@@ -45,7 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tambah UKM</title>
+    <title>Tambah Mahasiswa</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -100,8 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         .form-container input[type="text"],
         .form-container input[type="email"],
-        .form-container input[type="tel"],
-        .form-container textarea {
+        .form-container input[type="tel"] {
             width: calc(100% - 20px);
             padding: 10px;
             margin: 10px 0;
@@ -186,12 +196,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             color: #000;
             font-family: 'Segoe UI';
             font-size: 16px;
+
         }
 
         .nav-link2 {
             font-family: 'Segoe UI';
         }
 
+        /* Styling untuk popup gagal */
         .popup-fail {
             display: none;
             position: fixed;
@@ -207,6 +219,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             max-width: 400px;
             width: 100%;
             border-left: 5px solid red;
+            /* Garis tepi merah di sebelah kiri */
         }
 
         .message-fail {
@@ -227,17 +240,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <body>
     <div class="header">
-        <div class="title">Tambah UKM</div>
+        <div class="title">Tambah Kegiatan</div>
     </div>
     <div class="breadcrumb">
-        <a href="ukm.php">UKM</a> > <a href="add_ukm.php" class="active">Tambah UKM</a>
+        <a href="kegiatan.php">Kegiatan</a> > <a href="add_kegiatan.php" class="active">Tambah Kegiatan</a>
     </div>
     <div style="margin-top: 50px;" class="form-container">
-        <form action="add_ukm.php" method="post">
+        <form action="add_kegiatan.php" method="post">
             <input type="hidden" name="id" value="<?php echo $editData['id'] ?? ''; ?>">
             <input type="hidden" name="action" value="<?php echo $editData ? 'edit' : 'add'; ?>">
-            <input type="text" name="nama" placeholder="Nama" value="<?php echo $editData['nama'] ?? ''; ?>" required>
-            <textarea name="deskripsi" placeholder="Deskripsi" required><?php echo $editData['deskripsi'] ?? ''; ?></textarea>
+            <input type="text" name="nama_kegiatan" placeholder="Nama Kegiatan" value="<?php echo $editData['nama_kegiatan'] ?? ''; ?>" required>
+            <input type="text" name="deskripsi" placeholder="Deskripsi" value="<?php echo $editData['deskripsi'] ?? ''; ?>" required>
+            <input type="text" name="waktu" placeholder="Waktu" value="<?php echo $editData['waktu'] ?? ''; ?>" required>
+            <input type="text" name="tempat" placeholder="Tempat" value="<?php echo $editData['tempat'] ?? ''; ?>" required>
             <button type="submit">Simpan</button>
         </form>
     </div>
@@ -246,8 +261,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="sub-message">Silahkan kembali ke halaman utama <br> untuk melihat hasil data yang telah <br> ditambahkan</div>
         <div class="separator"></div>
         <div class="actions">
-            <a href="ukm.php" class="nav-link">KEMBALI</a>
-            <a style="color: grey; font-size:14px" href="add_ukm.php" class="nav-link2">TAMBAH DATA BARU</a>
+            <a href="kegiatan.php" class="nav-link">KEMBALI</a>
+            <a style="color: grey; font-size:14px" href="add_kegiatan.php" class="nav-link2">TAMBAH DATA BARU</a>
         </div>
     </div>
     <div class="popup-fail" id="popup-fail">
@@ -257,13 +272,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            <?php if ($_SERVER["REQUEST_METHOD"] == "POST"): ?>
+            if (<?php echo isset($_POST['nama_kegiatan']) ? 'true' : 'false'; ?>) {
                 if (<?php echo $success ? 'true' : 'false'; ?>) {
                     document.getElementById('popup').style.display = 'block';
                 } else if (<?php echo $error ? 'true' : 'false'; ?>) {
                     document.getElementById('popup-fail').style.display = 'block';
                 }
-            <?php endif; ?>
+            }
         });
     </script>
 </body>

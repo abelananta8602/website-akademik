@@ -8,51 +8,17 @@ function get_mahasiswa($conn)
     return $result;
 }
 
-function get_mahasiswa_by_id($conn, $id)
-{
-    $stmt = $conn->prepare("SELECT * FROM mahasiswa WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    return $result->fetch_assoc();
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id = $_POST['id'];
-    $nim = $_POST['nim'];
-    $nama = $_POST['nama'];
-    $alamat = $_POST['alamat'];
-    $email = $_POST['email'];
-    $telepon = $_POST['telepon'];
-    $action = $_POST['action'];
-
-    if ($action == 'add') {
-        $stmt = $conn->prepare("INSERT INTO mahasiswa (nim, nama, alamat, email, telepon) VALUES (?, ?, ?, ?, ?)");
-        $stmt->bind_param("sssss", $nim, $nama, $alamat, $email, $telepon);
-    } elseif ($action == 'edit') {
-        $stmt = $conn->prepare("UPDATE mahasiswa SET nim=?, nama=?, alamat=?, email=?, telepon=? WHERE id=?");
-        $stmt->bind_param("sssssi", $nim, $nama, $alamat, $email, $telepon, $id);
-    }
-    $stmt->execute();
-    $stmt->close();
-    header("Location: main.php");
-}
-
 if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $stmt = $conn->prepare("DELETE FROM mahasiswa WHERE id=?");
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $stmt->close();
+    $ids = explode(',', $_GET['delete']);
+    foreach ($ids as $id) {
+        $stmt = $conn->prepare("DELETE FROM mahasiswa WHERE id=?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
+    }
     header("Location: main.php");
-}
-
-$editData = null;
-if (isset($_GET['edit'])) {
-    $editData = get_mahasiswa_by_id($conn, $_GET['edit']);
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -60,268 +26,295 @@ if (isset($_GET['edit'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Website Akademik</title>
-    <link rel="stylesheet" href="styles.css">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
 </head>
 
 <body>
-<nav>
-    <ul>
-        <li><a style="font-weight:semi-bold;" class="text-dark" href="main.php">Mahasiswa</a></li>
-        <li><a style="font-weight:semi-bold;" class="text-dark" href="mata_kuliah.php">Mata Kuliah</a></li>
-        <li><a style="font-weight:semi-bold;" class="text-dark" href="jadwal_kuliah.php">Jadwal Kuliah</a></li>
-        <li><a style="font-weight:semi-bold;" class="text-dark" href="ukm.php">UKM</a></li>
-        <li><a style="font-weight:semi-bold;" class="text-dark" href="kegiatan.php">Kegiatan</a></li>
-    </ul>
-</nav>
-<div style="margin-top: 50px;" class="container">
-    <div class="text-center">
-        <button style="margin:30px; font-weight:bold; background-color:#60EFFF" id="openModal" class="text-dark btn">Tambah Mahasiswa</button>
-    </div>
-    <table>
-        <thead>
-            <tr>
-                <th>NIM</th>
-                <th>Nama</th>
-                <th>Alamat</th>
-                <th>Email</th>
-                <th>No. Telepon</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
+    <?php include 'components/sidebar.php'; ?>
+    <h3 style="font-family:merriweather; font-weight:bold;margin-top:30px; margin-left:350px">MAHASISWA</h3>
+    <div id="main" class="container mt-5">
+        <div class="controls mb-3">
+            <button id="delete-btn" class="btn btn-danger" style="display: none; margin-right: 10px;" onclick="deleteSelected()">Hapus Data</button>
             <?php
             $result = get_mahasiswa($conn);
             if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo '<tr>';
-                    echo '<td>' . $row['nim'] . '</td>';
-                    echo '<td>' . $row['nama'] . '</td>';
-                    echo '<td>' . $row['alamat'] . '</td>';
-                    echo '<td>' . $row['email'] . '</td>';
-                    echo '<td>' . $row['telepon'] . '</td>';
-                    echo '<td>
-                            <a href="main.php?edit=' . $row['id'] . '">Edit</a> |
-                            <a href="main.php?delete=' . $row['id'] . '" onclick="return confirm(\'Are you sure?\')">Hapus</a>
-                        </td>';
-                    echo '</tr>';
-                }
-            } else {
-                echo '<tr><td colspan="6" class="text-center">Tidak ada data mahasiswa</td></tr>';
+                echo "<button onclick=\"window.location.href='add_main.php'\" class=\"btn btn-tambah-data\">Tambah Data</button>";
             }
             ?>
-        </tbody>
-    </table>
-</div>
+        </div>
 
-<div id="formModal" class="modal">
-    <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2 style="margin-top: 15px;"><?php echo isset($editData) ? 'Edit' : 'Tambah'; ?> Mahasiswa</h2>
-        <form id="mahasiswaForm" method="post" action="main.php">
-            <input type="hidden" name="action" value="<?php echo isset($editData) ? 'edit' : 'add'; ?>">
-            <input type="hidden" name="id" value="<?php echo isset($editData) ? $editData['id'] : ''; ?>">
-            <label for="nim">NIM:</label>
-            <input type="text" id="nim" name="nim" value="<?php echo isset($editData) ? $editData['nim'] : ''; ?>" required>
-
-            <label for="nama">Nama:</label>
-            <input type="text" id="nama" name="nama" value="<?php echo isset($editData) ? $editData['nama'] : ''; ?>" required>
-
-            <label for="alamat">Alamat:</label>
-            <input type="text" id="alamat" name="alamat" value="<?php echo isset($editData) ? $editData['alamat'] : ''; ?>" required>
-
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" value="<?php echo isset($editData) ? $editData['email'] : ''; ?>" required>
-
-            <label for="telepon">No. Telepon:</label>
-            <input type="text" id="telepon" name="telepon" value="<?php echo isset($editData) ? $editData['telepon'] : ''; ?>" required>
-            <button type="submit"><?php echo isset($editData) ? 'Ubah' : 'Simpan'; ?></button>
-        </form>
-    </div>
-</div>
-
-<script>
-    var modal = document.getElementById("formModal");
-    var btn = document.getElementById("openModal");
-    var span = document.getElementsByClassName("close")[0];
-
-    btn.onclick = function() {
-        document.getElementById('mahasiswaForm').reset();
-        modal.style.display = "block";
-        document.querySelector("input[name='action']").value = 'add';
-    }
-
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
+        <?php
+        if ($result->num_rows > 0) {
+            echo '<table class="table">';
+            echo '<thead><tr><th scope="col"><input type="checkbox" id="select-all"></th><th scope="col">NIM</th><th scope="col">Nama</th><th scope="col">Alamat</th><th scope="col">Email</th><th scope="col">Telepon</th><th scope="col">Actions</th></tr></thead>';
+            echo '<tbody>';
+            while ($row = $result->fetch_assoc()) {
+                echo "<tr>";
+                echo "<td><input type='checkbox' class='select-checkbox' data-id='{$row['id']}'></td>";
+                echo "<td>{$row['nim']}</td>";
+                echo "<td>{$row['nama']}</td>";
+                echo "<td>{$row['alamat']}</td>";
+                echo "<td>{$row['email']}</td>";
+                echo "<td>{$row['telepon']}</td>";
+                echo "<td><a href='edit_main.php?id={$row['id']}' class='edit-link'>Edit</a></td>";
+                echo "</tr>";
+            }
+            echo '</tbody></table>';
+        } else {
+            echo "<div class='empty-data'>
+            <div class='left-content'>
+                <h2>MAAF KAMI TIDAK DAPAT <br> MENEMUKAN DATA <br> APAPUN DISINI</h2>
+                <button onclick=\"window.location.href='add_main.php'\" class='btn btn-tambah-data'>TAMBAH DATA</button>
+            </div>
+            <div class='right-content'>
+                <p>admin bisa memulai menambahkan <br> data melalui tombol dibawah</p>
+            </div>
+          </div>";
         }
-    }
+        ?>
+    </div>
 
-    <?php if (isset($_GET['edit'])) : ?>
-        document.getElementById("formModal").style.display = "block";
-        document.querySelector("input[name='action']").value = 'edit';
-    <?php endif; ?>
-</script>
-</body>
+    <!-- Modal -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmDeleteModalLabel">HAPUS DATA</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            Apakah anda ingin menghapus data yang anda pilih?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">TIDAK</button>
+            <button type="button" class="btn btn-primary" id="confirmDeleteBtn">YA</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-</html>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.select-checkbox');
+            const deleteBtn = document.getElementById('delete-btn');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            const selectAll = document.getElementById('select-all');
 
+            let selectedIds = [];
 
+            selectAll.addEventListener('change', function() {
+                const isChecked = selectAll.checked;
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                    const id = checkbox.getAttribute('data-id');
+                    if (isChecked && !selectedIds.includes(id)) {
+                        selectedIds.push(id);
+                    } else if (!isChecked && selectedIds.includes(id)) {
+                        selectedIds = selectedIds.filter(selectedId => selectedId !== id);
+                    }
+                });
+                deleteBtn.style.display = selectedIds.length > 0 ? 'inline-block' : 'none';
+            });
 
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const id = checkbox.getAttribute('data-id');
+                    if (checkbox.checked) {
+                        if (!selectedIds.includes(id)) {
+                            selectedIds.push(id);
+                        }
+                    } else {
+                        selectedIds = selectedIds.filter(selectedId => selectedId !== id);
+                    }
+                    deleteBtn.style.display = selectedIds.length > 0 ? 'inline-block' : 'none';
+                });
+            });
 
-<!DOCTYPE html>
-<html lang="en">
+            deleteBtn.addEventListener('click', function() {
+                $('#confirmDeleteModal').modal('show');
+            });
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Main Page</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/styles.css" rel="stylesheet">
-
-</head>
-
-<body>
-
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (selectedIds.length > 0) {
+                    window.location.href = 'main.php?delete=' + selectedIds.join(',');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
 
 <style>
-    nav {
-        
-        background-color: #60EFFF;
-        color: white;
-        padding: 20px 0;
-    }
-
-    nav ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
+    .empty-data {
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
+        height: 580px;
+        padding: 0;
+        background-color: #fff;
+        border: none;
+        margin-top: 20px;
+        background-image: url('image/elips.png');
+        background-size: 100% 25%;
+        background-position: bottom;
+        background-repeat: no-repeat;
+        box-sizing: border-box;
     }
 
-    nav ul li {
-        margin: 0 15px;
+    .left-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding-left: 40px;
     }
 
-    nav ul li a {
-        font-weight: 500;
-        text-decoration: none;
-        font-size: 18px;
+    .right-content {
+        text-align: right;
+        color: grey;
+        padding-right: 40px;
     }
 
-    nav ul li a:hover {
-        text-decoration: underline;
+    .empty-data h2 {
+        margin-bottom: 20px;
+    }
+
+    .btn:hover {
+        background-color: #0D0C22;
+    }
+
+    .btn:active {
+        background-color: #292751;
+    }
+
+    .btn-secondary[disabled] {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
     }
 
     body {
-        font-family: Arial, sans-serif;
+        font-family: "Lato", sans-serif;
         background-color: #f4f4f4;
     }
 
-    .container {
-        max-width: 900px;
-        margin: 0 auto;
+    .btn {
+        color: white;
+        background-color: #0D0C22;
+        border: none;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .btn-tambah-data {
+        color: white;
+        background-color: #0D0C22;
+    }
+
+    .btn-danger {
+        color: white;
+        background-color: red;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-danger:hover {
+        background-color: darkred;
+    }
+
+    #main {
+        margin-left: 340px;
         padding: 20px;
-        background-color: #fff;
+        background-color: white;
         border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        width: calc(100% - 360px);
     }
 
-    .text-center {
-        text-align: center;
+    .page-title {
+        color: #333;
         margin-bottom: 20px;
     }
 
-    table {
+    .controls button {
+        margin-right: 10px;
+    }
+
+    .table {
         width: 100%;
-        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .table th,
+    .table td {
+        vertical-align: middle;
+        padding: 8px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .edit-link {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .edit-link:hover {
+        text-decoration: underline;
+    }
+
+    .select-checkbox {
+        cursor: pointer;
+    }
+
+    .controls {
+        text-align: right;
         margin-bottom: 20px;
     }
 
-    table th,
-    table td {
-        padding: 10px;
-        border: 1px solid #ddd;
-        text-align: left;
+    .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
     }
 
-    table th {
-        background-color: #f2f2f2;
-    }
-
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0, 0, 0, 0.5);
+    .modal-dialog {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 1rem);
     }
 
     .modal-content {
-        background-color: #fff;
-        margin: 10% auto;
-        padding: 20px;
-        border: 1px solid #888;
-        width: 80%;
-        max-width: 500px;
-        max-height: 70vh;
         border-radius: 8px;
-
-        overflow-y: auto;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
 
-    .close {
-        color: #aaa;
-        float: right;
-        font-size: 28px;
+    .modal-header {
+        background-color: #fff;
+        border-bottom: none;
+    }
+
+    .modal-footer {
+        border-top: none;
+    }
+
+    .modal-title {
+        color: #333;
         font-weight: bold;
     }
 
-    .close:hover,
-    .close:focus {
-        color: #000;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-    }
-
-    input[type="text"],
-    input[type="date"],
-    select {
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-
-    button {
-        background-color: #60EFFF;
-        font-weight: bold;
-        color: black;
-        padding: 10px 20px;
+    .btn-primary {
+        background-color: #0D0C22;
         border: none;
-        border-radius: 4px;
-        cursor: pointer;
     }
 
-    button:hover {
-        background-color: #50d8d8;
+    .btn-secondary {
+        color: #333;
+        background-color: #f4f4f4;
+        border: 1px solid #ccc;
     }
 </style>

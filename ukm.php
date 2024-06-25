@@ -1,307 +1,317 @@
 <?php
 include 'koneksi.php';
 
-
-function get_ukm($conn) {
+function get_ukm($conn)
+{
     $sql = "SELECT * FROM ukm";
     $result = $conn->query($sql);
     return $result;
 }
 
-
 if (isset($_GET['delete'])) {
-    $id = $_GET['delete'];
-    $sql = "DELETE FROM ukm WHERE id='$id'";
-    $conn->query($sql);
-    header("Location: ukm.php");
-}
-
-$id = $nama = $deskripsi = '';
-$action = 'add';
-
-if (isset($_GET['edit'])) {
-    $id = $_GET['edit'];
-    $result = $conn->query("SELECT * FROM ukm WHERE id='$id'");
-    $row = $result->fetch_assoc();
-    $nama = $row['nama'];
-    $deskripsi = $row['deskripsi'];
-    $action = 'edit';
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id = $_POST['id'];
-    $nama = $_POST['nama'];
-    $deskripsi = $_POST['deskripsi'];
-
-    if ($_POST['action'] == 'add') {
-        $sql = "INSERT INTO ukm (nama, deskripsi) VALUES ('$nama', '$deskripsi')";
-    } elseif ($_POST['action'] == 'edit') {
-        $sql = "UPDATE ukm SET nama='$nama', deskripsi='$deskripsi' WHERE id='$id'";
+    $ids = explode(',', $_GET['delete']);
+    foreach ($ids as $id) {
+        $stmt = $conn->prepare("DELETE FROM ukm WHERE id=?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $stmt->close();
     }
-    $conn->query($sql);
     header("Location: ukm.php");
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UKM</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Website Akademik</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/styles.css" rel="stylesheet">
 </head>
+
 <body>
-<nav>
-        <ul>
-            <li><a style="font-weight:semi-bold;"  href="main.php">Mahasiswa</asty></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="mata_kuliah.php">Mata Kuliah</a></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="jadwal_kuliah.php">Jadwal Kuliah</a></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="ukm.php">UKM</a></li>
-            <li><a style="font-weight:semi-bold;" class="text-dark" href="kegiatan.php">Kegiatan</a></li>
-        </ul>
-    </nav>
-    <div class="container">
-        <h1 class="text-center">Unit Kegiatan Mahasiswa (UKM)</h1>
-        <button style="font-weight:bold; background-color:#60EFFF" id="openModal" class="text-dark; btn ">Tambah UKM</button>
-
-  
-        <div id="ukmModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2 id="modalTitle">Tambah UKM</h2>
-                <form id="ukmForm" method="post">
-                    <input type="hidden" name="action" id="action" value="add">
-                    <input type="hidden" name="id" id="id">
-                    <label for="nama">Nama UKM:</label>
-                    <input type="text" id="nama" name="nama" required>
-                    <label for="deskripsi">Deskripsi:</label>
-                    <textarea id="deskripsi" name="deskripsi" required></textarea>
-                    <button type="submit">Simpan</button>
-                </form>
-            </div>
-        </div>
-
-      
-        <div class="card-container">
+    <?php include 'components/sidebar.php'; ?>
+    <h3 style="font-family:merriweather; font-weight:bold;margin-top:30px; margin-left:350px">UKM</h3>
+    <div id="main" class="container mt-5">
+        <div class="controls mb-3">
+            <button id="delete-btn" class="btn btn-danger" style="display: none; margin-right: 10px;" onclick="deleteSelected()">Hapus Data</button>
             <?php
             $result = get_ukm($conn);
             if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    echo '
-                    <div class="card">
-                        <div class="card-content">
-                            <h2>' . $row['nama'] . '</h2>
-                            <p>' . $row['deskripsi'] . '</p>
-                            <div class="card-actions">
-                                <button class="edit-btn" data-id="' . $row['id'] . '" data-nama="' . $row['nama'] . '" data-deskripsi="' . $row['deskripsi'] . '">Edit</button>
-                                <a href="ukm.php?delete=' . $row['id'] . '" onclick="return confirm(\'Are you sure?\')">Delete</a>
-                            </div>
-                        </div>
-                    </div>';
-                }
-            } else {
-                echo '<p>No UKM found</p>';
+                echo "<button onclick=\"window.location.href='add_ukm.php'\" class=\"btn btn-tambah-data\">Tambah Data</button>";
             }
             ?>
         </div>
+
+        <?php
+        if ($result->num_rows > 0) {
+            echo '<table class="table">';
+            echo '<thead><tr><th scope="col"><input type="checkbox" id="select-all"></th><th scope="col">Nama</th><th scope="col">Deskripsi</th><th scope="col">Actions</th></tr></thead>';
+            echo '<tbody>';
+            while ($row = $result->fetch_assoc()) {
+                echo "<tr>";
+                echo "<td><input type='checkbox' class='select-checkbox' data-id='{$row['id']}'></td>";
+                echo "<td>{$row['nama']}</td>";
+                echo "<td>{$row['deskripsi']}</td>";
+                echo "<td style='height: 180px;'><a href='edit_ukm.php?id={$row['id']}' class='edit-link'>Edit</a></td>";
+                echo "</tr>";
+            }
+            echo '</tbody></table>';
+        } else {
+            echo "<div class='empty-data'>
+            <div class='left-content'>
+                <h2>MAAF KAMI TIDAK DAPAT <br> MENEMUKAN DATA <br> APAPUN DISINI</h2>
+                <button onclick=\"window.location.href='add_ukm.php'\" class='btn btn-tambah-data'>TAMBAH DATA</button>
+            </div>
+            <div class='right-content'>
+                <p>admin bisa memulai menambahkan <br> data melalui tombol dibawah</p>
+            </div>
+          </div>";
+        }
+        ?>
     </div>
 
+    <!-- Modal -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmDeleteModalLabel">HAPUS DATA</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            Apakah anda ingin menghapus data yang anda pilih?
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">TIDAK</button>
+            <button type="button" class="btn btn-primary" id="confirmDeleteBtn">YA</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-      
-        var modal = document.getElementById("ukmModal");
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.select-checkbox');
+            const deleteBtn = document.getElementById('delete-btn');
+            const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+            const selectAll = document.getElementById('select-all');
 
-      var btn = document.getElementById("openModal");
+            let selectedIds = [];
 
-      
-        var span = document.getElementsByClassName("close")[0];
+            selectAll.addEventListener('change', function() {
+                const isChecked = selectAll.checked;
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                    const id = checkbox.getAttribute('data-id');
+                    if (isChecked && !selectedIds.includes(id)) {
+                        selectedIds.push(id);
+                    } else if (!isChecked && selectedIds.includes(id)) {
+                        selectedIds = selectedIds.filter(selectedId => selectedId !== id);
+                    }
+                });
+                deleteBtn.style.display = selectedIds.length > 0 ? 'inline-block' : 'none';
+            });
 
-        
-        btn.onclick = function() {
-            document.getElementById('ukmForm').reset();
-            document.getElementById('modalTitle').innerText = 'Tambah UKM';
-            document.getElementById('action').value = 'add';
-            modal.style.display = "block";
-        }
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const id = checkbox.getAttribute('data-id');
+                    if (checkbox.checked) {
+                        if (!selectedIds.includes(id)) {
+                            selectedIds.push(id);
+                        }
+                    } else {
+                        selectedIds = selectedIds.filter(selectedId => selectedId !== id);
+                    }
+                    deleteBtn.style.display = selectedIds.length > 0 ? 'inline-block' : 'none';
+                });
+            });
 
-        
-        span.onclick = function() {
-            modal.style.display = "none";
-        }
+            deleteBtn.addEventListener('click', function() {
+                $('#confirmDeleteModal').modal('show');
+            });
 
-        
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-    
-        document.querySelectorAll('.edit-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                document.getElementById('modalTitle').innerText = 'Edit UKM';
-                document.getElementById('action').value = 'edit';
-                document.getElementById('id').value = button.getAttribute('data-id');
-                document.getElementById('nama').value = button.getAttribute('data-nama');
-                document.getElementById('deskripsi').value = button.getAttribute('data-deskripsi');
-                modal.style.display = "block";
+            confirmDeleteBtn.addEventListener('click', function() {
+                if (selectedIds.length > 0) {
+                    window.location.href = 'ukm.php?delete=' + selectedIds.join(',');
+                }
             });
         });
     </script>
 </body>
+
 </html>
 
 <style>
-    nav {
-    background-color: #60EFFF;
-    color: white;
-    padding: 20px 0;
-}
+    .empty-data {
+        display: flex;
+        justify-content: space-between;
+        height: 580px;
+        padding: 0;
+        background-color: #fff;
+        border: none;
+        margin-top: 20px;
+        background-image: url('image/elips.png');
+        background-size: 100% 25%;
+        background-position: bottom;
+        background-repeat: no-repeat;
+        box-sizing: border-box;
+    }
 
-nav ul {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-}
+    .left-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding-left: 40px;
+    }
 
-nav ul li {
-    margin: 0 15px;
-}
+    .right-content {
+        text-align: right;
+        color: grey;
+        padding-right: 40px;
+    }
 
-nav ul li a {
-    color: black;
-    text-decoration: none;
-    font-size: 18px;
-}
+    .empty-data h2 {
+        margin-bottom: 20px;
+    }
 
-nav ul li a:hover {
-    text-decoration: underline;
-}
+    .btn:hover {
+        background-color: #0D0C22;
+    }
+
+    .btn:active {
+        background-color: #292751;
+    }
+
+    .btn-secondary[disabled] {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
     body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-}
-    body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding: 0;
-}
+        font-family: "Lato", sans-serif;
+        background-color: #f4f4f4;
+    }
 
-.container {
-    width: 80%;
-    margin: 0 auto;
-    padding: 20px;
-}
+    .btn {
+        color: white;
+        background-color: #0D0C22;
+        border: none;
+        cursor: pointer;
+        margin-top: 10px;
+    }
 
-.text-center {
-    text-align: center;
-}
+    .btn-tambah-data {
+        color: white;
+        background-color: #0D0C22;
+    }
 
-.btn {
-    background-color: #60EFFF;
-    
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    display: inline-block;
-    margin-bottom: 20px;
-}
+    .btn-danger {
+        color: white;
+        background-color: red;
+        border: none;
+        cursor: pointer;
+    }
 
-.btn:hover {
-    background-color: #0056b3;
-}
+    .btn-danger:hover {
+        background-color: darkred;
+    }
 
-.card-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-}
+    #main {
+        margin-left: 340px;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        width: calc(100% - 360px);
+    }
 
-.card {
-    width: 300px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    background-color: #fff;
-}
+    .page-title {
+        color: #333;
+        margin-bottom: 20px;
+    }
 
-.card-content {
-    padding: 20px;
-}
+    .controls button {
+        margin-right: 10px;
+    }
 
-.card-content h2 {
-    margin-top: 0;
-}
+    .table {
+        width: 100%;
+        margin-top: 20px;
+    }
 
-.card-content p {
-    color: #555;
-}
+    .table th,
+    .table td {
+        vertical-align: middle;
+        padding: 8px;
+        border-bottom: 1px solid #ccc;
+    }
 
-.card-actions {
-    padding-top: 10px;
-    border-top: 1px solid #ddd;
-    text-align: right;
-}
+    .edit-link {
+        color: #007bff;
+        text-decoration: none;
+    }
 
-.card-actions button,
-.card-actions a {
-    color: #007bff;
-    text-decoration: none;
-    margin-left: 10px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font: inherit;
-}
+    .edit-link:hover {
+        text-decoration: underline;
+    }
 
-.card-actions button:hover,
-.card-actions a:hover {
-    text-decoration: underline;
-}
+    .select-checkbox {
+        cursor: pointer;
+    }
 
-.modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1; 
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgb(0,0,0); 
-    background-color: rgba(0,0,0,0.4); 
-}
+    .controls {
+        text-align: right;
+        margin-bottom: 20px;
+    }
 
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto; 
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%; 
-    max-width: 500px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-}
+    .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+    }
 
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
+    .modal-dialog {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 1rem);
+    }
 
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
+    .modal-content {
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
 
+    .modal-header {
+        background-color: #fff;
+        border-bottom: none;
+    }
+
+    .modal-footer {
+        border-top: none;
+    }
+
+    .modal-title {
+        color: #333;
+        font-weight: bold;
+    }
+
+    .btn-primary {
+        background-color: #0D0C22;
+        border: none;
+    }
+
+    .btn-secondary {
+        color: #333;
+        background-color: #f4f4f4;
+        border: 1px solid #ccc;
+    }
 </style>

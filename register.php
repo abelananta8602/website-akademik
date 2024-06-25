@@ -7,75 +7,252 @@ if (!file_exists('koneksi.php')) {
     exit();
 }
 
-
-
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
     $username = $_POST['username'];
     $password = password_hash($_POST['password'], PASSWORD_BCRYPT);
 
-    $sql = "INSERT INTO users (email, username, password) VALUES ('$email', '$username', '$password')";
+    $stmt = $conn->prepare("INSERT INTO users (email, username, password) VALUES (?, ?, ?)");
+    $stmt->bind_param("sss", $email, $username, $password);
 
-    if ($conn->query($sql) === TRUE) {
+    if ($stmt->execute()) {
         header("Location: login.php");
         exit();
     } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
+        echo "Error: " . $stmt->error;
     }
+
+    $stmt->close();
 }
+
+$conn->close();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/styles.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #F7F7F7;
+            display: flex;
+            flex-direction: column;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 270px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-image: url('image/bglogindua.png');
+            background-color: #0D0C22;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        #main {
+            margin-left: 270px;
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+            /* Make it flexible */
+        }
+
+        .header {
+            margin-left: 70px;
+            margin-top: 150px;
+            /* Adjust this value to move the header down */
+            padding-bottom: 20px;
+        }
+
+        .header p,
+        .header h4 {
+            margin: 0;
+        }
+
+        .header p {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .header h4 {
+            font-size: 33px;
+            line-height: 1.2;
+            margin-top: 10px;
+        }
+
+        .container {
+            margin-left: 51px;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0 20px;
+        }
+
+        .card {
+            padding-left: 20px;
+            height: 330px;
+            width: 480px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .form-control {
+            width: 400px;
+            height: 40px;
+            font-size: 0.9rem;
+            background-color: #E6E6E6;
+        }
+
+        .btn-primary {
+            width: 400px;
+            height: 40px;
+            background-color: black;
+            border: none;
+            color: white;
+            transition: background-color 0.3s ease; /* Transisi untuk perubahan warna */
+        }
+
+        .btn-primary:hover {
+            background-color: #333; /* Warna saat di-hover */
+        }
+
+        .btn-primary:active {
+            background-color: #555; /* Warna saat diklik */
+        }
+
+        .btn-primary:focus {
+            outline: none; /* Menghapus border fokus default */
+            background-color: #222; /* Warna saat fokus */
+        }
+
+        .signup {
+            margin-left: 60px;
+            height: 290px;
+            margin-top: 20px;
+            background-color: #0E0D23;
+            color: white;
+            padding: 20px;
+            border-radius: 0px 0px 60px 0px;
+            width: 230px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .signup p {
+            margin: 0;
+            font-size: 1.1rem;
+            text-align: center;
+            
+            margin-bottom: 10px;
+        }
+
+        .btn-circle {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
+            font-size: 20px;
+            line-height: 40px;
+            background-color: white;
+            color: black;
+            border: none;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-left: 340px;
+        }
+        input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+}
+
+input:-webkit-autofill {
+    -webkit-text-fill-color: #000 !important;
+}
+    </style>
 </head>
+
 <body>
-<div style="margin-top: 70px" class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card mt-5">
-                <div style="background-color: #60EFFF;"  class="card-header text-center">
-                    <h2>Register</h2>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="register.php">
-                        <div class="form-group">
-                           <p style="font-weight: 400;" >Complete the data below to create your new account.</p>
-                            <label style="margin-top:10px"  for="email">Email address</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+    <div class="sidebar" id="sidebar">
+        <center>
+            <h1 style="font-size:25px; color:white; font-family:merriweather; margin-top: 370px;">REGISTER</h1>
+        </center>
+    </div>
+    <div id="main">
+        <div>
+            <div class="header">
+                <p style="font-family:merriweather;">PANEL ADMIN</p>
+                <h4 style="font-weight:bold; font-family:merriweather;">AKADEMIK SISWA UNIVERSITAS GARUDA UTAMA</h4>
+            </div>
+            <div class="container">
+                <div class="row" style="height: 80vh;">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <form action="register.php" method="POST" autocomplete="off">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Masukkan email</label>
+                                        <div class=""> 
+                                            <input type="email" class="form-control" id="email" name="email" placeholder="Masukkan email" autocomplete="off" value="">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label">Masukkan Username</label>
+                                        <input type="username" class="form-control" id="username" name="username" placeholder="Masukkan Username" autocomplete="off" value="">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Masukkan kata sandi</label>
+                                        <input type="password" class="form-control" id="password" name="password" placeholder="Masukkan kata sandi" autocomplete="off" value="">
+                                    </div>
+                                    <button style="height:40px; width:400px; background-color:black; color:white" type="submit" class="btn">Register</button>
+                                </form>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="username">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <div class="signup">
+                            <p style="font-family:merriweather; font-size:18px">Anda sudah punya akun?<br><strong style="font-family:merriweather; font-size:22px">MASUK YUK!</strong></p>
+                            <a href="login.php" class="btn btn-light btn-circle">></a>
                         </div>
-                        <div class="form-group">
-                            <label for="password">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                        </div>
-                        <button style="font-weight:bold; background-color: #60EFFF;"  type="submit" class="text-dark btn btn-primary btn-block">register</button>
-                        <center style="margin-top: 20px;" ><span>if you already have an account, you can create one <a href="login.php">here.</a></span></center>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 </body>
 </html>
-
-<style>
-    body{
-       
-    background-repeat: no-repeat;
-        background-image: url('image/bg.png');
-        background-size:53% auto ; 
-        display: flex;
-    }
-</style>
